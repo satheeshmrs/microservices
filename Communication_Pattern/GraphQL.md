@@ -514,4 +514,120 @@ flowchart TD
 
 👉 So: **GraphQL is mostly stateless, except subscriptions.**
 
+# 🔐 Authentication & Authorization in GraphQL
+
+Unlike REST (multiple endpoints), GraphQL has a **single endpoint
+(`/graphql`)**.\
+So, **Auth must be handled at the request, resolver, or schema level.**
+
+------------------------------------------------------------------------
+
+## 🔹 1. Authentication in GraphQL
+
+**Authentication** = verifying *who* the user is.
+
+-   GraphQL requests use `POST /graphql`.\
+-   Tokens (JWT, OAuth, API keys) are sent in **HTTP headers**.\
+-   Middleware verifies the token and attaches user info to `context`.
+
+👉 Example Request
+
+``` http
+POST /graphql
+Headers:
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+Body:
+{
+  "query": "{ me { id name email } }"
+}
+```
+
+👉 Example (Apollo Server, Node.js)
+
+``` js
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: ({ req }) => {
+    const token = req.headers.authorization || "";
+    const user = verifyToken(token); // decode JWT
+    return { user };
+  },
+});
+```
+
+------------------------------------------------------------------------
+
+## 🔹 2. Authorization in GraphQL
+
+**Authorization** = deciding *what actions/resources* a user can access.
+
+Since GraphQL is one endpoint, authorization is applied at **resolver or
+schema level**.
+
+### ✅ Schema Directives
+
+``` graphql
+type Query {
+  users: [User] @auth(role: "admin")
+  me: User @auth
+}
+```
+
+### ✅ Resolver-Level Checks
+
+``` js
+const resolvers = {
+  Query: {
+    users: (parent, args, context) => {
+      if (context.user.role !== "admin") {
+        throw new Error("Unauthorized");
+      }
+      return db.users.findAll();
+    }
+  }
+};
+```
+
+### ✅ Middleware in .NET (Hot Chocolate)
+
+``` csharp
+public class Query {
+    [Authorize(Roles = new[] { "Admin" })]
+    public IQueryable<User> GetUsers([Service] AppDbContext db) => db.Users;
+}
+```
+
+------------------------------------------------------------------------
+
+## 🔹 3. Why Context Matters
+
+-   **Context** is created per request.\
+-   Holds `user`, `roles`, and request metadata.\
+-   Resolvers check `context` for permissions.
+
+------------------------------------------------------------------------
+
+## 🔹 4. Best Practices
+
+1.  **Authentication** → Verify token in middleware before executing
+    GraphQL.\
+2.  **Authorization** → Apply at resolver/schema level.\
+3.  **Granularity** → Restrict at:
+    -   Query/mutation level (e.g., `deleteUser` only for admins).\
+    -   Field level (e.g., `email` visible only to the owner).\
+4.  **Prevent leaks** → Don't expose unauthorized fields in schema.\
+5.  **Disable introspection in production** → Stop attackers from
+    exploring schema.
+
+------------------------------------------------------------------------
+
+## ✅ Summary
+
+-   **Authentication** → Headers + middleware (verify token).\
+-   **Authorization** → Resolver or schema level (role/field checks).\
+-   Use **context** to pass user info.\
+-   REST secures by endpoint → GraphQL secures by resolver/field.
+
+
 
