@@ -427,3 +427,91 @@ mutation {
 -   Add **subscriptions** for real-time updates\
 -   Swap **InMemory DB** with SQL Server/Postgres
 
+# 🔍 Is GraphQL Stateless?
+
+## 🔹 Short Answer
+
+Yes ✅ --- **GraphQL is stateless** for queries and mutations, but
+**subscriptions are stateful** because they use persistent connections
+(WebSockets).
+
+------------------------------------------------------------------------
+
+## 🔹 Why GraphQL is Stateless
+
+-   Built on top of **HTTP** → which is stateless by default.\
+-   Each request is **independent**.\
+-   Server does not remember past queries or sessions.\
+-   Client must send all info (auth, variables, query) with **every
+    request**.
+
+👉 Benefits:\
+- Scalable (any server can handle requests).\
+- Simpler architecture.\
+- More secure (no hidden server-side state).
+
+------------------------------------------------------------------------
+
+## 🔹 Where Confusion Comes From
+
+1.  **Variables**\
+    Sent with each request → not stored on server.
+
+2.  **Authentication**\
+    Done via tokens (e.g., JWT in headers). Must be included on **every
+    request**.
+
+3.  **Subscriptions**
+
+    -   Use **WebSockets** (or SSE).\
+    -   Connection stays open → server pushes updates.\
+    -   This makes **subscriptions stateful**.
+
+------------------------------------------------------------------------
+
+## 🔹 Flowchart: Stateless vs Stateful
+
+``` mermaid
+flowchart TD
+    A[Client] -->|GraphQL Query/Mutation| B[GraphQL Server]
+    B -->|JSON Response| A
+
+    C[Client] -.->|GraphQL Subscription WebSocket| D[GraphQL Server]
+    D -.->|Real-time Data Stream| C
+```
+
+-   Queries & Mutations → Independent request/response (stateless).\
+-   Subscriptions → Persistent connection (stateful).
+
+------------------------------------------------------------------------
+
+## 🔹 Comparison
+
+  ----------------------------------------------------------------------------
+  Feature                                   Stateless?           Why
+  ----------------------------------------- -------------------- -------------
+  **GraphQL Queries**                       ✅ Yes               Each request
+                                                                 is
+                                                                 independent
+
+  **GraphQL Mutations**                     ✅ Yes               Separate
+                                                                 calls per
+                                                                 mutation
+
+  **GraphQL Subscriptions**                 ⚠️ No                Requires
+                                                                 persistent
+                                                                 WebSocket
+                                                                 connection
+  ----------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## ✅ Summary
+
+-   **GraphQL Queries & Mutations** → Stateless (like REST).\
+-   **GraphQL Subscriptions** → Stateful (because WebSockets keep a live
+    connection).
+
+👉 So: **GraphQL is mostly stateless, except subscriptions.**
+
+
